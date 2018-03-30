@@ -1,0 +1,103 @@
+version: '2'
+services:
+
+#NZBget -  For downloading NZB files
+    nzbget:
+        image: "linuxserver/nzbget"
+        container_name: "nzbget"
+        volumes:
+          - ${USERDIR}/docker/nzbget:/config
+          - ${NZBDIR}/downloads:/downloads
+          - ${USERDIR}/docker/certs:/certs
+        ports:
+          - "6789:6789"
+        restart: always
+        environment:
+          - PUID=${PUID}
+          - PGID=${PGID}
+          - TZ=${TZ}
+
+#Radarr - Movie indexer
+    radarr:
+        image: "linuxserver/radarr"
+        container_name: "radarr"
+        volumes:
+          - ${USERDIR}/docker/radarr:/config
+          - ${NZBDIR}/downloads/completed:/downloads
+          - /mnt:/movies
+          - "/etc/localtime:/etc/localtime:ro"
+          - ${USERDIR}/docker/certs:/certs
+        ports:
+          - "7878:7878"
+        restart: always
+        environment:
+          - PUID=${PUID}
+          - PGID=${PGID}
+          - TZ=${TZ}
+          
+#Sonarr - TV-series indexer
+    sonarr:
+        image: "linuxserver/sonarr"
+        container_name: "sonarr"
+        volumes:
+          - ${USERDIR}/docker/sonarr:/config
+          - ${NZBDIR}/downloads/completed/series:/downloads
+          - /mnt:/tv
+          - "/etc/localtime:/etc/localtime:ro"
+          - ${USERDIR}/docker/certs:/certs
+        ports:
+          - "8989:8989"
+        restart: always
+        environment:
+          - PUID=${PUID}
+          - PGID=${PGID}
+          - TZ=${TZ}
+
+#Plex - Media browser
+    plexms:
+        container_name: plexms
+        restart: always
+        image: plexinc/pms-docker
+        volumes:
+          - ${USERDIR}/docker/plexms:/config
+          - ${USERDIR}/downloads/plex_tmp:/transcode
+          - /mnt:/media
+          - ${USERDIR}/docker/certs:/certs
+        network_mode: "host"
+        environment:
+          - TZ=${TZ}
+          - HOSTNAME="BatCave-Mediacenter"
+          - PLEX_CLAIM="claim-zsPWZvDs6JqpieRHLWet"
+          - PLEX_UID=${PUID}
+          - PLEX_GID=${PGID}
+          - ADVERTISE_IP="http://192.168.1.99:32400/"
+
+#PlexPY - Plex usage monitoring
+    plexpy:
+        container_name: plexpy
+        restart: always
+        image: linuxserver/plexpy
+        volumes:
+          - ${USERDIR}/docker/plexpy:/config
+          - /var/log/plexpy:/logs:ro
+          - ${USERDIR}/docker/certs:/certs
+        ports:
+          - "8181:8181"
+        environment:
+          - PUID=${PUID}
+          - PGID=${PGID}
+          - TZ=${TZ}
+#Ombi - Request system for mediaserver
+    ombi:
+        container_name: ombi
+        restart: always
+        image: linuxserver/ombi
+        volumes:
+          - ${USERDIR}/docker/ombi:/config
+          - ${USERDIR}/docker/certs:/certs
+        ports:
+          - "3579:3579"
+        environment:
+          - PUID=${PUID}
+          - PGID=${PGID}
+          - TZ=${TZ}
